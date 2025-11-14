@@ -48,22 +48,22 @@ const StarMap = ({ stars, date, time, location }) => {
 
     // ---- Draw stars ----
     stars.forEach((s) => {
-      const ra = parseFloat(s.RA);   // degrees
-      const dec = parseFloat(s.Dec); // degrees
-      const mag = parseFloat(s.Mag);
+      const baseSize = Math.max(0.8, 6 - mag * 1.2); // larger dynamic range
+      const glowSize = baseSize * 2.2;              // halo radius
 
-      if (isNaN(ra) || isNaN(dec) || isNaN(mag)) return;
+      // Glow (outer)
+      const gradient = ctx.createRadialGradient(x, y, 0, x, y, glowSize);
+      gradient.addColorStop(0, 'rgba(255, 255, 255, ${Math.min(1, 1.3 - mag * 0.15)})');
+      gradient.addColorStop(1, "rgba(255, 255, 255, 0)");
 
-      const { x, y } = projectRaDec(ra, dec);
-
-      // Star size & brightness
-      const starSize = Math.max(0.2, 4 - mag * 0.6);
-      const alpha = Math.max(0.15, 1 - mag / 6);
-
-      ctx.globalAlpha = alpha;
+      ctx.fillStyle = gradient;
       ctx.beginPath();
-      ctx.arc(x, y, starSize, 0, Math.PI * 2);
-      ctx.fillStyle = "white";
+      ctx.arc(x, y, glowSize, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Core (inner)
+      ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+      ctx.beginPath();
       ctx.fill();
     });
 
