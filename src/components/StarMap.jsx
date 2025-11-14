@@ -39,6 +39,25 @@ const StarMap = ({ stars, date, time, location }) => {
     ctx.lineWidth = 1;
     ctx.stroke();
 
+        // Grid lines (RA/Dec)
+    ctx.save();
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.10)";
+    ctx.lineWidth = 0.4;
+
+    // Right Ascension lines every 30°
+    for (let raDeg = 0; raDeg < 360; raDeg +=30) {
+      const theta = (raDeg * Math.PI) / 180;
+      const x = centerX + radius * Math.sin(theta);
+      const y = centerY - radius * Math.cos(theta);
+
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+    }
+
+    ctx.restore();
+
     if (!stars || stars.length === 0) {
       ctx.fillStyle = "white";
       ctx.font = "16px sans-serif";
@@ -46,7 +65,7 @@ const StarMap = ({ stars, date, time, location }) => {
       return;
     }
 
-    // ---- Draw stars ----
+    // Draw stars
     stars.forEach((s) => {
       const ra = parseFloat(s.RA);   // degrees
       const dec = parseFloat(s.Dec); // degrees
