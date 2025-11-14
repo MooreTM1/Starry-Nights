@@ -42,29 +42,28 @@ const StarMap = ({ stars, date, time, location }) => {
         // Grid lines (RA/Dec)
     ctx.save();
     ctx.filter = "blur(0.5px)";
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.20)";
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
     ctx.lineWidth = 0.6;
 
     // Declination circles
     const decSteps = [-45, 0, 45];
+
     decSteps.forEach((decDeg) => {
       const r = (radius * (90 - decDeg)) / 180;
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, r, 0, Math.PI * 2);
-      ctx.stroke();
-    });
-
-    // Right Ascension lines every 30°
-    for (let raDeg = 0; raDeg < 360; raDeg += 45) {
+      for (let raDeg = 0; raDeg < 360; raDeg += 45) {
       const theta = (raDeg * Math.PI) / 180;
       const x = centerX + radius * Math.sin(theta);
       const y = centerY - radius * Math.cos(theta);
 
       ctx.beginPath();
-      ctx.moveTo(centerX, centerY);
-      ctx.lineTo(x, y);
+      ctx.moveTo(x, y);
+      ctx.lineTo(
+        x + Math.sin(theta) * 4,
+        y - Math.cos(theta) * 4
+      );
       ctx.stroke();
     }
+  });
 
     ctx.restore();
 
