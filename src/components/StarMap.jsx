@@ -137,12 +137,12 @@ const StarMap = ({ stars, date, time, location }) => {
   return (
     <div className="flex flex-col items-center text-white">
       <canvas ref={canvasRef} className="rounded-full shadow-lg" />
-      <div className="mt-4 text-center">
-        <p className="text-sm tracking-[0.25em] uppercase">The Night Sky</p>
-        <p className="text-sm">
+      <div className="mt-8 text-center leading-relaxed">
+        <p className="text-xs tracking-[0.3em] uppercase text-slate-300">The Night Sky</p>
+        <p className="text-sm mt-2 text-slate-100">
           {location.city}, {location.state}
         </p>
-        <p className="text-sm">
+        <p className="text-xs mt-2 text-slate-300">
           {date.toLocaleDateString()}{" "}
           {time
             ? date.toLocaleTimeString([], {
@@ -151,7 +151,7 @@ const StarMap = ({ stars, date, time, location }) => {
               })
             : ""}
         </p>
-        <p className="text-xs">
+        <p className="text-[11px] mt-1 text-slate-400">
           {location.lat.toFixed(4)}° N {location.lon.toFixed(4)}° W
         </p>
       </div>
