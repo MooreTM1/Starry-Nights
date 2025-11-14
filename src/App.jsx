@@ -44,9 +44,8 @@ function App() {
   }, []);
 
   return (
-    <div className="min-h-screen flex justify-center items-center bg-[#020617]">
-      {/* Poster container */}
-      <div className="flex flex-col items-center px-4 py-10">
+    <div className="min-h-screen w-full flex items-center justify-center bg-[#oboe1a]">
+      <div className="flex flex-col items-center pb-20">
       <StarMap
         stars={stars}
         date={new Date("2025-08-04T21:00:00")}
