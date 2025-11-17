@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Papa from "papaparse";
 import StarMap from "./components/StarMap";
-// use your full Hipparcos catalog here:
 import hipparcos from "../data/hipparcos-voidmain.csv?raw";
 
 function App() {
@@ -15,7 +14,6 @@ function App() {
         console.log("Hipparcos CSV parsed:", results);
 
         const cleaned = results.data
-          // keep only rows that have RAdeg, DEdeg, and Vmag
           .filter((row) => row.RAdeg && row.DEdeg && row.Vmag)
           // map to the fields StarMap expects: RA, Dec, Mag
           .map((row) => ({
