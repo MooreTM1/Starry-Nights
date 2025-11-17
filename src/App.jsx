@@ -44,11 +44,11 @@ function App() {
   }, []);
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-[#oboe1a]">
-      <div className="flex flex-col items-center pb-20">
+    <div className="w-screen h-screen bg-[#oboe1a] flex items-center justify-center">
+      <div className="flex flex-col items-center">
       <StarMap
         stars={stars}
-        date={new Date("2025-08-04T21:00:00")}
+        date={new Date("1993-02-24T21:00:00")}
         time={true}
         location={{
           city: "Houston",
