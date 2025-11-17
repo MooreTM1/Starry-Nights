@@ -1,6 +1,63 @@
 import React, { useRef, useEffect } from "react";
 import { CONSTELLATIONS } from "../data/constellations";
 
+const deg2rad = (d) => (d * Math.PI) / 180;
+const rad2deg = (r) => (r * 180) / Math.PI;
+
+// Julian Date from JS Date (UTC based)
+function getJulianDate(date) {
+  return date.getTime() / 86400000 + 2440587.5;
+}
+
+// Compute Local Sidereal Time in degrees (0-360)
+// longitude: degrees, East positive, West negative (your lon is already negative)
+function getLocalSiderealTime(date, longitudeDeg) {
+  const jd = getJulianDate(date);
+  const T = (jd - 2451545.0) / 36525.0;
+
+  let GMST =
+    280.46061837 +
+    360.98564736629 * (jd - 2451545.0) +
+    0.000387933 * T * T -
+    (T * T * T) / 38710000;
+
+  GMST = ((GMST % 360) + 360) % 360; // normalize 0..360
+  let LST = GMST + longitudeDeg; // local
+  LST = ((LST % 360) + 360) % 360;
+  return LST;
+}
+
+// Convert Equatorial (RA,Dec in deg) to Horizontal (Alt/Az in radians)
+function eqToHz(raDeg, decDeg, latDeg, lstDeg) {
+  const raRad = deg2rad(raDeg);
+  const decRad = deg2rad(decDeg);
+  const latRad = deg2rad(latDeg);
+  const lstRad = deg2rad(lstDeg);
+
+  // Hour angle H = LST - RA
+  const H = lstRad - raRad;
+
+  const sinAlt =
+    Math.sin(decRad) * Math.sin(latRad) +
+    Math.cos(decRad) * Math.cos(latRad) * Math.cos(H);
+  const altRad = Math.asin(sinAlt);
+
+  const cosAz =
+    (Math.sin(decRad) - Math.sin(altRad) * Math.sin(latRad)) /
+    (Math.cos(altRad) * Math.cos(latRad));
+
+  // clamp due to float rounding
+  const cosAzClamped = Math.max(-1, Math.min(1, cosAz));
+  let azRad = Math.acos(cosAzClamped); // 0..pi
+
+  // Resolve quadrant using sign of sin(H)
+  if (Math.sin(H) > 0) {
+    azRad = 2 * Math.PI - azRad;
+  }
+
+  return { alt: altRad, az: azRad };
+}
+
 const StarMap = ({ stars, date, time, location }) => {
   const canvasRef = useRef(null);
 
@@ -22,50 +79,55 @@ const StarMap = ({ stars, date, time, location }) => {
     const centerY = canvas.height / 2;
     const radius = Math.min(centerX, centerY) - 20;
 
-    // Helper: project RA/Dec (deg) to x, y on this circle
-    const projectRaDec = (raDeg, decDeg) => {
-      const theta = (raDeg * Math.PI) / 180; // RA degrees -> radians
-      const r = (radius * (90 - decDeg)) / 180; // Dec -90..+90 -> 0..R
+    const { lat, lon } = location;
+    const lstDeg = getLocalSiderealTime(date, lon);
 
-      const x = centerX + r * Math.sin(theta);
-      const y = centerY - r * Math.cos(theta);
+    // Helper: project Alt/Az (radians) to x,y
+    const projectAltAz = (altRad, azRad) => {
+      const altDeg = rad2deg(altRad); // 0 at horizon, 90 at zenith
+      const r = (radius * (90 - altDeg)) / 90; // zenith center, horizon edge
+
+      const x = centerX + r * Math.sin(azRad);
+      const y = centerY - r * Math.cos(azRad);
       return { x, y };
     };
 
-    // Outer circle border
+    // Outer circle border (horizon)
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
     ctx.strokeStyle = "#ffffff";
     ctx.lineWidth = 1;
     ctx.stroke();
 
-        // Grid lines (RA/Dec)
+    // ===== GRID LINES in Alt/Az =====
     ctx.save();
     ctx.filter = "blur(0.5px)";
     ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
     ctx.lineWidth = 0.6;
 
-    // Declination circles
-    const decSteps = [-45, 0, 45];
+    // Altitude circles (30°, 60° above horizon)
+    const altSteps = [30, 60];
+    altSteps.forEach((altDeg) => {
+      const r = (radius * (90 - altDeg)) / 90;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, r, 0, Math.PI * 2);
+      ctx.stroke();
+    });
 
-    decSteps.forEach((decDeg) => {
-      const r = (radius * (90 - decDeg)) / 180;
-      for (let raDeg = 0; raDeg < 360; raDeg += 45) {
-      const theta = (raDeg * Math.PI) / 180;
-      const x = centerX + radius * Math.sin(theta);
-      const y = centerY - radius * Math.cos(theta);
+    // Azimuth lines every 45° (N, NE, E, ...)
+    for (let azDeg = 0; azDeg < 360; azDeg += 45) {
+      const azRad = deg2rad(azDeg);
+      const x = centerX + radius * Math.sin(azRad);
+      const y = centerY - radius * Math.cos(azRad);
 
       ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.lineTo(
-        x + Math.sin(theta) * 4,
-        y - Math.cos(theta) * 4
-      );
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(x, y);
       ctx.stroke();
     }
-  });
 
     ctx.restore();
+    // ===== END GRID =====
 
     if (!stars || stars.length === 0) {
       ctx.fillStyle = "white";
@@ -74,52 +136,66 @@ const StarMap = ({ stars, date, time, location }) => {
       return;
     }
 
-    // Draw stars
+    // ---- Draw stars with Alt/Az projection & glow ----
     stars.forEach((s) => {
-      const ra = parseFloat(s.RA);   // degrees
-      const dec = parseFloat(s.Dec); // degrees
+      const ra = parseFloat(s.RA); // degrees (already RAdeg)
+      const dec = parseFloat(s.Dec); // degrees (DEdeg)
       const mag = parseFloat(s.Mag);
 
       if (isNaN(ra) || isNaN(dec) || isNaN(mag)) return;
 
-      const { x, y } = projectRaDec(ra, dec);
+      // Convert to horizontal coordinates for this time/location
+      const { alt, az } = eqToHz(ra, dec, lat, lstDeg);
 
-      // Base sized based on magnitude
-      const baseSize = Math.max(0.8, 6 - mag * 1.2); // larger dynamic range
-      const glowSize = baseSize * 2.2;              // halo radius
+      // Only draw stars above horizon
+      if (alt <= 0) return;
 
-      // Glow (outer)
-      let centerAlpha = 1.3 - mag * 0.15; // brigther for small/negative mag
+      const { x, y } = projectAltAz(alt, az);
+
+      // Brightness / size based on magnitude
+      const baseSize = Math.max(0.6, 5.5 - mag * 1.1);
+      const glowSize = baseSize * 2.1;
+
+      let centerAlpha = 1.25 - mag * 0.14;
       centerAlpha = Math.max(0, Math.min(1, centerAlpha));
 
       const gradient = ctx.createRadialGradient(x, y, 0, x, y, glowSize);
-      
-      gradient.addColorStop(0, "rgba(255, 255, 255, " + centerAlpha + ")");
-      gradient.addColorStop(1, "rgba(255, 255, 255, 0)")
+      gradient.addColorStop(
+        0,
+        "rgba(255, 255, 255, " + centerAlpha + ")"
+      );
+      gradient.addColorStop(1, "rgba(255, 255, 255, 0)");
 
+      // Glow
       ctx.fillStyle = gradient;
       ctx.beginPath();
       ctx.arc(x, y, glowSize, 0, Math.PI * 2);
       ctx.fill();
 
-      // Core (inner)
-      ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+      // Core
+      ctx.fillStyle = "rgba(255, 255, 255, 0.96)";
       ctx.beginPath();
+      ctx.arc(x, y, baseSize * 0.55, 0, Math.PI * 2);
       ctx.fill();
     });
 
     ctx.globalAlpha = 1;
 
-    // ---- Draw constellation lines on top ----
+    // ---- Draw constellation lines (projected via Alt/Az) ----
     ctx.lineWidth = 0.6;
     ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
 
     CONSTELLATIONS.forEach((constellation) => {
       constellation.lines.forEach(([ra1, dec1, ra2, dec2]) => {
-        const p1 = projectRaDec(ra1, dec1);
-        const p2 = projectRaDec(ra2, dec2);
+        const h1 = eqToHz(ra1, dec1, lat, lstDeg);
+        const h2 = eqToHz(ra2, dec2, lat, lstDeg);
 
-        // Quick check: only draw if both points are inside the circle
+        // Only draw segments where both endpoints are above horizon
+        if (h1.alt <= 0 || h2.alt <= 0) return;
+
+        const p1 = projectAltAz(h1.alt, h1.az);
+        const p2 = projectAltAz(h2.alt, h2.az);
+
         const d1 =
           Math.hypot(p1.x - centerX, p1.y - centerY) <= radius + 1;
         const d2 =
@@ -134,15 +210,27 @@ const StarMap = ({ stars, date, time, location }) => {
     });
   }, [stars, date, time, location]);
 
+  // Caption
+  const latLabel =
+    location.lat >= 0
+      ? `${location.lat.toFixed(4)}° N`
+      : `${Math.abs(location.lat).toFixed(4)}° S`;
+  const lonLabel =
+    location.lon >= 0
+      ? `${location.lon.toFixed(4)}° E`
+      : `${Math.abs(location.lon).toFixed(4)}° W`;
+
   return (
     <div className="flex flex-col items-center text-white">
       <canvas ref={canvasRef} className="rounded-full shadow-lg" />
       <div className="mt-8 text-center leading-relaxed">
-        <p className="text-xs tracking-[0.3em] uppercase text-slate-300">The Night Sky</p>
+        <p className="text-xs tracking-[0.3em] uppercase text-slate-300">
+          The Night Sky
+        </p>
         <p className="text-sm mt-2 text-slate-100">
           {location.city}, {location.state}
         </p>
-        <p className="text-xs mt-2 text-slate-300">
+        <p className="text-xs mt-1 text-slate-300">
           {date.toLocaleDateString()}{" "}
           {time
             ? date.toLocaleTimeString([], {
@@ -152,7 +240,7 @@ const StarMap = ({ stars, date, time, location }) => {
             : ""}
         </p>
         <p className="text-[11px] mt-1 text-slate-400">
-          {location.lat.toFixed(4)}° N {location.lon.toFixed(4)}° W
+          {latLabel} {lonLabel}
         </p>
       </div>
     </div>
