@@ -42,8 +42,8 @@ function App() {
   }, []);
 
   return (
-    <div className="w-screen h-screen bg-[#0b0e1a] flex items-center justify-center">
-      <div className="flex flex-col items-center">
+    <div className="app-root">
+      <div>
       <StarMap
         stars={stars}
         date={new Date("1993-02-24T21:00:00")}
