@@ -42,7 +42,7 @@ function App() {
   }, []);
 
   return (
-    <div className="w-screen h-screen bg-[#oboe1a] flex items-center justify-center">
+    <div className="w-screen h-screen bg-[#0b0e1a] flex items-center justify-center">
       <div className="flex flex-col items-center">
       <StarMap
         stars={stars}
