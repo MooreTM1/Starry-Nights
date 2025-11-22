@@ -11,22 +11,15 @@ function App() {
   // Multiple sky preset
   const [skies, setSkies] = useState([]);
 
-  // Current sky settings
-  const [sky, setSky] = useState({
-    date: new Date("1993-02-24T21:00:00"),
-    hasTime: true,
-    city: "Houston",
-    state: "TX",
-    lat: 29.7660,
-    lon: -95.3701,
-  });
-
+  // Index of current selected sky
+  const [currentIndex, setCurrentIndex] = useState(0);
   // Modal + form state
   const [showEditor, setShowEditor] = useState(false);
   const [form, setForm] = useState({
     date: "1993-02-24",
     time: "21:00",
     city: "Houston",
+    state: "TX",
     lat: "29.7660",
     lon: "-95.3701",
   });
