@@ -16,6 +16,7 @@ function App() {
   // Modal + form state
   const [showEditor, setShowEditor] = useState(false);
   const [form, setForm] = useState({
+    name: "",
     date: "1993-02-24",
     time: "21:00",
     city: "Houston",
@@ -132,6 +133,7 @@ function App() {
       const min = String(d.getMinutes()).padStart(2, "0");
 
       setForm({
+        name: currentSky.name || "",
         date: `${yyyy}-${mm}-${dd}`,
         time: currentSky.hasTime ? `${hh}:${min}` : "",
         city: currentSky.city,
@@ -155,7 +157,7 @@ function App() {
   const handleFormSubmit = (e) => {
     e.preventDefault();
 
-    const { date, time, city, state, lat, lon } = form;
+    const { name, date, time, city, state, lat, lon } = form;
     if (!date) {
       alert("Please enter a date.");
       return;
@@ -177,9 +179,16 @@ function App() {
     const labelLocation = labelParts.join(", ");
     const labelDate = dateObj.toLocaleDateString();
 
+    // If user typed a name, use that, otherwise default is used
+    const displayName = 
+      name && name.trim()
+      ? name.trim()
+      : '${labelLocation || "Sky"} - ${labelDate}';
+
     const newSky = {
       id: crypto.randomUUID(),
-      label: `${labelLocation || "Sky"} — ${labelDate}`,
+      name: displayName,
+      label: displayName,
       date: dateObj,
       hasTime: Boolean(time && time.trim() !== ""),
       city: city || "Unknown",
@@ -236,7 +245,9 @@ function App() {
               ◀
             </button>
             <span className="sky-nav-label">
-              Sky {currentIndex + 1} / {skies.length}
+              {(currentSky.name || currentSky.label || 'Sky ${currentIndex + 1}')}
+              {" · "}
+              {currentIndex + 1} / {skies.length}
             </span>
             <button onClick={nextSky} className="sky-nav-btn">
               ▶
@@ -271,6 +282,17 @@ function App() {
               will create a new preset.
             </p>
             <form onSubmit={handleFormSubmit}>
+              <div className="modal-field">
+                <label htmlFor="name">Sky Name (optional)</label>
+                <input
+                  id="name"
+                  name="name"
+                  type="text"
+                  value={form.name}
+                  onChange={handleFormChange}
+                  placeholder="e.g. A Great Day"
+                />
+              </div>
               <div className="modal-row">
                 <div className="modal-field">
                   <label htmlFor="date">Date</label>
