@@ -154,3 +154,51 @@ body {
 .btn-secondary:hover {
   background-color: rgba(15, 23, 42, 0.8);
 }
+
+/* Sky navigation under caption */
+.sky-nav {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #e5e7eb;
+  font-size: 13px;
+}
+
+.sky-nav-btn {
+  border-radius: 999px;
+  border: 1px solid #4b5563;
+  background-color: #020617;
+  color: #e5e7eb;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.sky-nav-btn:hover {
+  background-color: #111827;
+}
+
+.sky-nav-label {
+  opacity: 0.8;
+}
+
+/* Auto-rotate toggle */
+.sky-auto-btn {
+  border-radius: 999px;
+  padding: 4px 12px;
+  border: 1px solid #4b5563;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.sky-auto-btn.off {
+  background-color: transparent;
+  color: #e5e7eb;
+}
+
+.sky-auto-btn.on {
+  background-color: #22c55e33;
+  border-color: #22c55e;
+  color: #bbf7d0;
+}
