@@ -219,6 +219,23 @@ function App() {
     );
   };
 
+  const renameCurrentSky = () => {
+    if (!currentSky) return;
+
+    const existing = currentSky.name || currentSky.label || 'Sky ${currentIndex + 1}';
+
+    const newName = window.prompt("Name this sky:", existing);
+    if (!newName || !newName.trim()) return;
+
+    const trimmed = newName.trim();
+
+    setSkies((prev) =>
+      prev.map((s, idx) =>
+        idx === currentIndex ? {...s, name: trimmed, label: trimmed} : s
+      )
+    );
+  };
+
   if (!currentSky) {
     return <div className="app-root" />;
   }
