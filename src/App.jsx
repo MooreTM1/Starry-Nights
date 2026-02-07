@@ -219,6 +219,30 @@ function App() {
     );
   };
 
+  const deleteCurrentSky = () => {
+    if (!currentSky) return;
+
+    // Prevents deleting last remaining sky
+    if (skies.length === 1) {
+      alert("You must keep at least one sky.");
+      return;
+    }
+
+    const ok = confirm('Delete "${currentSky.label}"? This cannot be undone. ');
+    if (!ok) return;
+
+     setSkies((prev) => {
+    const idx = currentIndex;
+    const next = prev.filter((s) => s.id !== currentSky.id);
+
+    // Adjust current index so it stays in range
+    const nextIndex = Math.max(0, Math.min(idx, next.length - 1));
+    setCurrentIndex(nextIndex);
+
+    return next;
+   });
+};
+
   const renameCurrentSky = () => {
     if (!currentSky) return;
 
