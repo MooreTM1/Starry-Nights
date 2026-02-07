@@ -301,6 +301,10 @@ function App() {
             >
               Auto
             </button>
+
+            <button onClick={deleteCurrentSky} className="sky-delete-btn">
+              Delete
+            </button>
           </div>
         )}
       </div>
