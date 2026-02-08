@@ -26,6 +26,8 @@ function App() {
   });
 
   const [autoRotate, setAutoRotate] = useState(false);
+  const [showRename, setShowRename] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
 
   useEffect(() => {
     Papa.parse(hipparcos, {
@@ -183,7 +185,7 @@ function App() {
     const displayName = 
       name && name.trim()
       ? name.trim()
-      : '${labelLocation || "Sky"} - ${labelDate}';
+      : `${labelLocation || "Sky"} - ${labelDate}`;
 
     const newSky = {
       id: crypto.randomUUID(),
@@ -243,22 +245,26 @@ function App() {
    });
 };
 
-  const renameCurrentSky = () => {
-    if (!currentSky) return;
+  const openRename = () => {
+  if (!currentSky) return;
+  setRenameValue(currentSky.label || "");
+  setShowRename(true);
+};
 
-    const existing = currentSky.name || currentSky.label || 'Sky ${currentIndex + 1}';
+const closeRename = () => setShowRename(false);
 
-    const newName = window.prompt("Name this sky:", existing);
-    if (!newName || !newName.trim()) return;
+const saveRename = (e) => {
+  e.preventDefault();
+  const nextLabel = renameValue.trim();
+  if (!nextLabel) return;
 
-    const trimmed = newName.trim();
+  setSkies((prev) =>
+    prev.map((s, i) => (i === currentIndex ? { ...s, name: nextLabel, label: nextLabel } : s))
+  );
 
-    setSkies((prev) =>
-      prev.map((s, idx) =>
-        idx === currentIndex ? {...s, name: trimmed, label: trimmed} : s
-      )
-    );
-  };
+  setShowRename(false);
+};
+
 
   if (!currentSky) {
     return <div className="app-root" />;
@@ -271,6 +277,7 @@ function App() {
           stars={stars}
           date={currentSky.date}
           time={currentSky.hasTime}
+          title={currentSky.label}
           location={{
             city: currentSky.city,
             state: currentSky.state,
@@ -280,13 +287,13 @@ function App() {
         />
 
         {/* Sky navigation + auto toggle */}
-        {skies.length > 1 && (
+        {currentSky && (
           <div className="sky-nav">
             <button onClick={prevSky} className="sky-nav-btn">
               ◀
             </button>
             <span className="sky-nav-label">
-              {(currentSky.name || currentSky.label || 'Sky ${currentIndex + 1}')}
+              {(currentSky.name || currentSky.label || `Sky ${currentIndex + 1}`)}
               {" · "}
               {currentIndex + 1} / {skies.length}
             </span>
@@ -298,8 +305,13 @@ function App() {
                 "sky-auto-btn " + (autoRotate ? "on" : "off")
               }
               onClick={() => setAutoRotate((v) => !v)}
+              disabled={skies.length <= 1}
             >
               Auto
+            </button>
+
+            <button className="sky-nav-btn" onClick={openRename}>
+              Rename
             </button>
 
             <button onClick={deleteCurrentSky} className="sky-delete-btn">
@@ -428,6 +440,38 @@ function App() {
           </div>
         </div>
       )}
+      
+    {showRename && (
+        <div className="modal-backdrop" onClick={closeRename}>
+    <div className="modal" onClick={(e) => e.stopPropagation()}>
+      <h2>Rename Sky</h2>
+      <p className="modal-subtitle">Give this saved sky a new name.</p>
+
+      <form onSubmit={saveRename}>
+        <div className="modal-field">
+          <label htmlFor="rename">Name</label>
+          <input
+            id="rename"
+            type="text"
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            placeholder="e.g., Anniversary Night"
+            autoFocus
+          />
+        </div>
+
+        <div className="modal-actions">
+          <button type="button" className="btn-secondary" onClick={closeRename}>
+            Cancel
+          </button>
+          <button type="submit" className="btn-primary">
+            Save Name
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+    )}
     </div>
   );
 }

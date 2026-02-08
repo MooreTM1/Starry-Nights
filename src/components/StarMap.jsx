@@ -58,7 +58,7 @@ function eqToHz(raDeg, decDeg, latDeg, lstDeg) {
   return { alt: altRad, az: azRad };
 }
 
-const StarMap = ({ stars, date, time, location }) => {
+const StarMap = ({ stars, date, time, location, title }) => {
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -224,8 +224,8 @@ const StarMap = ({ stars, date, time, location }) => {
     <div className="flex flex-col items-center text-white">
       <canvas ref={canvasRef} className="rounded-full shadow-lg" />
       <div className="mt-8 text-center leading-relaxed">
-        <p className="text-xs tracking-[0.3em] uppercase text-slate-300">
-          The Night Sky
+        <p className="text-xs tracking-[0.25em] uppercase text-slate-300">
+          {title || "The Night Sky"}
         </p>
         <p className="text-sm mt-2 text-slate-100">
           {location.city}, {location.state}
