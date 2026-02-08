@@ -228,7 +228,7 @@ function App() {
       return;
     }
 
-    const ok = confirm('Delete "${currentSky.label}"? This cannot be undone. ');
+    const ok = confirm(`Delete "${currentSky.label}"? This cannot be undone. `);
     if (!ok) return;
 
      setSkies((prev) => {
