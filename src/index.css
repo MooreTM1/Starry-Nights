@@ -19,7 +19,7 @@ body {
 }
 
 .app-root {
-  min-height: 100;
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -227,4 +227,82 @@ body {
 .sky-delete-btn:hover {
   background: rgba(255, 80, 80, 0.20);
   border-color: rgba(255,255,255,0.28);
+}
+
+.floating-controls {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column; /* stack vertically */
+  gap: 12px;
+  z-index: 50;
+}
+
+
+.chip {
+  min-height: 44px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.10);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.18);
+  backdrop-filter: blur(6px);
+
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.chip:active {
+  transform: scale(0.98);
+}
+
+.chip.on {
+  background: rgba(34, 197, 94, 0.20);   /* green glow */
+  border-color: rgba(34, 197, 94, 0.65);
+  color: #bbf7d0;
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.45);
+}
+
+.chip.danger {
+  background: rgba(255, 80, 80, 0.18);
+  border-color: rgba(255, 80, 80, 0.35);
+}
+
+.chip:disabled {
+  opacity: 0.45;
+}
+
+/* FAB wrapper (bottom-right) */
+.fab-wrap {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+/* Menu that pops above the ✦ */
+.fab-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+/* Move ✦ button to the right side */
+.floating-button-right {
+  left: auto !important;
+  right: 0;
+  bottom: 0;
+}
+
+/* Make the ✦ a little more “menu button” like */
+.floating-button-right {
+  width: 56px;
+  height: 56px;
 }

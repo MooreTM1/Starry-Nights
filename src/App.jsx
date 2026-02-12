@@ -64,6 +64,7 @@ function App() {
   const [showRename, setShowRename] = useState(false);
   const [renameValue, setRenameValue] = useState("");
   const [showControls, setShowControls] = useState(true);
+  const [showFabMenu, setShowFabMenu] = useState(false);
 
   useEffect(() => {
     Papa.parse(hipparcos, {
@@ -210,6 +211,21 @@ function App() {
       window.removeEventListener("click", resetTimer);
     };
   }, []);
+
+ useEffect(() => {
+  const close = () => setShowFabMenu(false);
+
+  if (!showFabMenu) return;
+
+  window.addEventListener("click", close);
+  window.addEventListener("touchstart", close);
+
+  return () => {
+    window.removeEventListener("click", close);
+    window.removeEventListener("touchstart", close);
+  };
+}, [showFabMenu]);
+ 
 
   const currentSky = 
     skies.length > 0 
@@ -365,9 +381,25 @@ const saveRename = (e) => {
 
 const makeCurrentDefault = () => {
   if (!currentSky) return;
+
+  const ok = confirm(`Make "${currentSky.label}" the default sky on boot?`);
+  if (!ok) return;
+
+  // Save to localStorage so it boots into this sky next time
   localStorage.setItem(DEFAULT_SKY_KEY, currentSky.id);
-  alert(`"${currentSky.label}" will be the default sky.`);
-}
+
+  setSkies((prev) => {
+    const idx = prev.findIndex((s) => s.id === currentSky.id);
+    if (idx < 0) return prev;
+
+    const copy = [...prev];
+    const [picked] = copy.splice(idx, 1);
+    copy.unshift(picked);
+    return copy;
+  });
+
+  setCurrentIndex(0);
+};
 
 
   if (!currentSky) {
@@ -404,30 +436,49 @@ const makeCurrentDefault = () => {
             <button onClick={nextSky} className="sky-nav-btn">
               ▶
             </button>
+          </div>
+        )}
+      </div>
+
+      {/* Floating FAB menu (bottom right) */}
+      <div
+        className="fab-wrap"
+        onClick={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+      >
+        {showFabMenu && (
+          <div className="fab-menu">
             <button
-              className={
-                "sky-auto-btn " + (autoRotate ? "on" : "off")
-              }
+              className={"chip " + (autoRotate ? "on" : "")}
               onClick={() => setAutoRotate((v) => !v)}
               disabled={skies.length <= 1}
             >
               Auto
             </button>
 
-            <button className="sky-nav-btn" onClick={openRename}>
+            <button className="chip" onClick={makeCurrentDefault}>
+              Default
+            </button>
+
+            <button className="chip" onClick={openRename}>
               Rename
             </button>
 
-            <button className="sky-nav-btn" onClick={makeCurrentDefault}>
-              Make Default
-            </button>
-
-            <button onClick={deleteCurrentSky} className="sky-delete-btn">
+            <button className="chip danger" onClick={deleteCurrentSky}>
               Delete
             </button>
           </div>
         )}
+
+        <button
+          className="floating-button floating-button-right"
+          onClick={() => setShowFabMenu((v) => !v)}
+          aria-label="Open controls"
+        >
+          ✦
+        </button>
       </div>
+
 
       {/* Floating add/edit button */}
       <button className="floating-button" onClick={openEditor}>

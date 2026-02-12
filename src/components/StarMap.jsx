@@ -221,7 +221,7 @@ const StarMap = ({ stars, date, time, location, title }) => {
       : `${Math.abs(location.lon).toFixed(4)}° W`;
 
   return (
-    <div className="flex flex-col items-center text-white">
+    <div className="flex flex-col items-center text-white" style={{width: 600}}>
       <canvas ref={canvasRef} className="rounded-full shadow-lg" />
       <div className="mt-8 text-center leading-relaxed">
         <p className="text-xs tracking-[0.25em] uppercase text-slate-300">
