@@ -4,6 +4,41 @@ import StarMap from "./components/StarMap";
 import hipparcos from "../data/hipparcos-voidmain.csv?raw";
 
 const STORAGE_KEY = "starsout_skies";
+const DAILY_SKY_ID = "daily-sky";
+const DEFAULT_SKY_KEY = "starsout_default_sky_id";
+
+// Build "Daily Sky" preset (9:00 PM)
+function buildDailySky() {
+  const now = new Date();
+  const dateAt9pm = new Date (
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    21, // 9 PM
+    0,
+    0,
+    0
+  );
+
+  return {
+    id: DAILY_SKY_ID,
+    name: "Daily Sky",
+    label: "Daily Sky",
+    date: dateAt9pm,
+    hasTime: true,
+    city: "Houston",
+    state: "TX",
+    lat: 29.7660,
+    lon: -95.3701,
+  };
+}
+
+// Milliseconds until next local midnight
+function msUntilNextMidnight() {
+  const now = new Date();
+  const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 2);
+  return next.getTime() - now.getTime();
+}
 
 function App() {
   const [stars, setStars] = useState([]);
@@ -60,8 +95,10 @@ function App() {
     });
   }, []);
 
-  // Load skies from local storage
+  // Load skies from local storage and Daily Sky
   useEffect(() => {
+    const daily = buildDailySky();
+
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
@@ -69,29 +106,54 @@ function App() {
           ...s,
           date: new Date(s.date),
         }));
-        if (parsed.length > 0) {
-          setSkies(parsed);
-          setCurrentIndex(0);
-          return;
-        }
+
+        // Ensure Daily Sky exists and up to date
+        const hasDaily = parsed.some((s) => s.id === DAILY_SKY_ID);
+
+        const nextSkies = hasDaily
+          ? parsed.map((s) => (s.id === DAILY_SKY_ID ? { ...s, ...daily } : s))
+          : [daily, ...parsed];
+
+        setSkies(nextSkies);
+
+        const savedDefaultId = localStorage.getItem(DEFAULT_SKY_KEY) || DAILY_SKY_ID;
+
+        const idx = nextSkies.findIndex((s) => s.id === savedDefaultId);
+        setCurrentIndex(idx >= 0 ? idx : 0);
+
+        return;
       }
     } catch (e) {
-      console.warn("Failed to load skies from storage:", e);
+      console.warn("Failed to load skies:", e);
     }
 
-    // Fallback default sky
-    const defaultSky = {
-      id: crypto.randomUUID(),
-      label: "Default",
-      date: new Date("1993-02-24T00:30:00"),
-      hasTime: true,
-      city: "Houston",
-      state: "TX",
-      lat: 29.7660,
-      lon: -95.3701,
-    };
-    setSkies([defaultSky]);
+    // Fallback: only Daily Sky
+    setSkies([daily]);
     setCurrentIndex(0);
+  }, []);
+
+  // Update Daily Sky at next midnight, then every midnight
+  useEffect(() => {
+    let timerId;
+
+    const updateDaily = () => {
+      const daily = buildDailySky();
+      setSkies((prev) =>
+        prev.map((s) => (s.id === DAILY_SKY_ID ? { ...s, ...daily } : s))
+      );
+    };
+
+    const scheduleNext = () => {
+      const delay = msUntilNextMidnight();
+      timerId = setTimeout(() => {
+        updateDaily();
+        scheduleNext();
+      }, delay);
+    };
+
+    scheduleNext();
+
+    return () => clearTimeout(timerId);
   }, []);
 
   // Persist skies to localStorage
@@ -224,6 +286,12 @@ function App() {
   const deleteCurrentSky = () => {
     if (!currentSky) return;
 
+    // Prevents Daily Sky from being deleted
+    if (currentSky.id === DAILY_SKY_ID) {
+      alert("Daily Sky cannot be deleted.");
+      return;
+    }
+
     // Prevents deleting last remaining sky
     if (skies.length === 1) {
       alert("You must keep at least one sky.");
@@ -264,6 +332,12 @@ const saveRename = (e) => {
 
   setShowRename(false);
 };
+
+const makeCurrentDefault = () => {
+  if (!currentSky) return;
+  localStorage.setItem(DEFAULT_SKY_KEY, currentSky.id);
+  alert(`"${currentSky.label}" will be the default sky.`);
+}
 
 
   if (!currentSky) {
@@ -312,6 +386,10 @@ const saveRename = (e) => {
 
             <button className="sky-nav-btn" onClick={openRename}>
               Rename
+            </button>
+
+            <button className="sky-nav-btn" onClick={makeCurrentDefault}>
+              Make Default
             </button>
 
             <button onClick={deleteCurrentSky} className="sky-delete-btn">
