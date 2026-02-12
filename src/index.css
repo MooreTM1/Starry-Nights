@@ -183,6 +183,15 @@ body {
   opacity: 0.8;
 }
 
+.sky-nav {
+  transition: opacity 0.4s ease;
+}
+
+.sky-nav.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* Auto-rotate toggle */
 .sky-auto-btn {
   border-radius: 999px;

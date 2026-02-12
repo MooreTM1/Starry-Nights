@@ -391,7 +391,7 @@ const makeCurrentDefault = () => {
         />
 
         {/* Sky navigation + auto toggle */}
-        {currentSky && (
+        {currentSky && showControls && (
           <div className="sky-nav">
             <button onClick={prevSky} className="sky-nav-btn">
               ◀
