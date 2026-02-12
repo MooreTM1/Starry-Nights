@@ -63,6 +63,7 @@ function App() {
   const [autoRotate, setAutoRotate] = useState(false);
   const [showRename, setShowRename] = useState(false);
   const [renameValue, setRenameValue] = useState("");
+  const [showControls, setShowControls] = useState(true);
 
   useEffect(() => {
     Papa.parse(hipparcos, {
@@ -180,6 +181,35 @@ function App() {
 
     return () => clearInterval(id);
   }, [autoRotate, skies.length]);
+
+  // Hides nav controls
+  useEffect(() => {
+    let timer;
+
+    const resetTimer = () => {
+      setShowControls(true);
+
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        setShowControls(false);
+      }, 8000);
+    };
+
+    // Listen for interaction
+    window.addEventListener("mousemove", resetTimer);
+    window.addEventListener("touchstart", resetTimer);
+    window.addEventListener("click", resetTimer);
+
+    // Start timer
+    resetTimer()
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("mousemove", resetTimer);
+      window.removeEventListener("touchstart", resetTimer);
+      window.removeEventListener("click", resetTimer);
+    };
+  }, []);
 
   const currentSky = 
     skies.length > 0 
